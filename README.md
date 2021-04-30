@@ -1,12 +1,8 @@
-# Discontinued
-
-***I worked on this project in my spare time, but unfortunately I no longer work with mikrotik devices and don't have the free time anymore, so consider it as discontinued. Feel free to fork this project and create your own spin.***
-
 # RouterOS Client
-This is a client wrapper for [node-routeros](https://github.com/aluisiora/node-routeros) api for doing common tasks and making the api easier to use for small and large NodeJS projects.
+This is a client wrapper for [node-routeros](https://github.com/vostronet/node-routeros) api for doing common tasks and making the api easier to use for small and large NodeJS projects.
 
 ## Getting Started
-These instructions will help you install and use some of the client features, you can get a complete documentation in the [wiki](https://github.com/aluisiora/routeros-client/wiki).
+These instructions will help you install and use some of the client features, you can get a complete documentation in the [wiki](https://github.com/vostronet/routeros-client/wiki).
 
 ### Prerequisites
 You must be familiar with [Promises](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise), how to chain it, how to catch errors and etc.
@@ -19,38 +15,36 @@ npm install routeros-client --save
 Note: you are not required to install `node-routeros` since it's already a dependency of this lib.
 
 ## Features
-[Everything you get from the `node-routeros`](https://github.com/aluisiora/node-routeros) is still here, plus:
+[Everything you get from the `node-routeros`](https://github.com/vostronet/node-routeros) is still here, plus:
  * You can save the menu and reuse it for multiple operations.
  * There is a "Model" feature where you can fire commands on each entry of a menu individually (check the examples).
  * Easy to read and write reusable code.
 
 ## Examples
-Here are some short examples of usage, head to the [wiki](https://github.com/aluisiora/routeros-client/wiki) for a complete documentation.
+Here are some short examples of usage, head to the [wiki](https://github.com/vostronet/routeros-client/wiki) for a complete documentation.
 ### Connecting
 ```javascript
-const RouterOSClient = require('routeros-client').RouterOSClient;
-
-const api = new RouterOSClient({
-    host: "192.168.88.1",
-    user: "admin",
-    password: "123456"
-});
-
-api.connect().then((client) => {
-    // After connecting, the promise will return a client class so you can start using it
-
-    // You can either use spaces like the winbox terminal or
-    // use the way the api does like "/system/identity", either way is fine
-    client.menu("/system identity").getOnly().then((result) => {
-        console.log(result.identity); // Mikrotik
-        api.close();
-    }).catch((err) => {
-        console.log(err); // Some error trying to get the identity
+import {RouterOSClient} from "routeros-client";
+(async() => {
+    const api = new RouterOSClient({
+        host: "192.168.88.1",
+        user: "admin",
+        password: "123456"
     });
+    try {
+        // After connecting, the promise will return a client class so you can start using it
+        const client = await api.connect();
+        // You can either use spaces like the winbox terminal or
+        // use the way the api does like "/system/identity", either way is fine
+        const result = await client.menu("/system identity").getOnly();
+        console.log(result.identity); // Mikrotik
+    } catch(err) {
+        console.log(err); // Some error trying to get the identity
+    }
+    await api.close(); // attempt to disconnect 
+})();
 
-}).catch((err) => {
-    // Connection error
-});
+
 ```
 ### Printing only VLAN interfaces
 ```javascript
@@ -195,7 +189,7 @@ Note that, if are cloning this repo, you must be familiar with [Typescript](http
 ## Running the tests
 There aren't that many tests, but in order to run them, I used [RouterOS CHR](https://mikrotik.com/download) (look for the Cloud Hosted Router if you aren't familiar with it yet) on a virtual machine with 4 interfaces, where the first interface is a bridge of my network card:
 
-![VirtualBox RouterOS CHR Conf](https://raw.githubusercontent.com/aluisiora/routeros-client/master/images/routeros-chr-interfaces.gif)
+![VirtualBox RouterOS CHR Conf](https://raw.githubusercontent.com/vostronet/routeros-client/master/images/routeros-chr-interfaces.gif)
 
 Also, the vm gets the 10.62.0.25 ip address, you might want to change that in the test files according to network.
 The user and password was set to admin and admin respectively.
@@ -206,11 +200,14 @@ npm test
 ```
 The testing was created using [mocha](https://mochajs.org/) and [chai](http://chaijs.com/).
 # TODO
- * Write more tests
+[TODO](https://github.com/VostroNet/routeros-client/projects/1)
+
+
 # License
 MIT License
 
 Copyright (c) 2017 Aluisio Rodrigues Amaral
+Copyright (c) 2021 VostroNet
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

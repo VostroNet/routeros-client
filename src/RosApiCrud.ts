@@ -118,8 +118,11 @@ export abstract class RouterOSAPICrud {
      * @param data optional data that goes with the command
      */
     public exec(command: string, data?: object): Types.SocPromise {
-        if (data) this.makeQuery(data);
-        const query = this.fullQuery("/" + command);
+        let query = this.fullQuery("/" + command);
+        if (data) {
+            query = [...query, ...this.makeQuery(data)];
+        }
+        
         return this.translateQueryIntoId(query).then((consultedQuery) => {
             return this.write(consultedQuery);
         }).then((results) => {
@@ -161,8 +164,7 @@ export abstract class RouterOSAPICrud {
 
         return this.queryForIdsIfNeeded(updatedIds).then((ids: string) => {
             updatedIds = ids;
-            this.makeQuery(data);
-            return this.exec("set");
+            return this.exec("set", data);
         }).then((response: any[]) => {
             return this.recoverDataFromChangedItems(updatedIds);
         });
@@ -309,53 +311,47 @@ export abstract class RouterOSAPICrud {
         let tmpVal: string | number | boolean | null;
 
         const tmpQuery = addToLocalQuery ? this.queryVal : [];
-
-        for (const key in searchParameters) {
-            if (searchParameters.hasOwnProperty(key)) {
-                tmpVal = searchParameters[key];
-                if (/[A-Z]/.test(tmpKey)) {
-                    tmpKey = tmpKey.replace(/([A-Z])/g, "$1").toLowerCase();
-                }
-                tmpKey = key.replace(/_/, "-");
-
-                // if selecting for id, convert it to .id to match mikrotik standards
-                switch (tmpKey) {
-                    case "id":
-                        tmpKey = ".id";
-                        break;
-
-                    case "next":
-                        tmpKey = ".nextid";
-                        break;
-
-                    case "dead":
-                        tmpKey = ".dead";
-                        break;
-
-                    default: 
-                        break;
-                }
-
-                if (typeof tmpVal === "boolean") {
-                    tmpVal = tmpVal ? "yes" : "no";
-                } else if (tmpVal === null) {
-                    tmpVal = "";
-                } else if (typeof tmpVal === "object") {
-                    tmpVal = this.stringfySearchQuery(tmpVal);
-                } else if (tmpKey === "placeAfter") {
-                    this.placeAfter = tmpVal;
-                    tmpKey = "placeBefore";
-                }                
-
-                tmpKey = (addQuestionMark ? "?" : "=") + tmpKey;
-
-                tmpKey = utils.camelCaseOrSnakeCaseToDashedCase(tmpKey);
-
-                tmpQuery.push(tmpKey + "=" + tmpVal);
+        const keys = Object.keys(searchParameters);
+        for(let i = 0; i < keys.length; i++)  {
+            const key = keys[i]
+            let tmpVal = searchParameters[key];
+            if (/[A-Z]/.test(tmpKey)) {
+                tmpKey = tmpKey.replace(/([A-Z])/g, "$1").toLowerCase();
             }
-        }
+            tmpKey = key.replace(/_/, "-");
+            // if selecting for id, convert it to .id to match mikrotik standards
+            switch (tmpKey) {
+                case "id":
+                    tmpKey = ".id";
+                    break;
+                case "next":
+                    tmpKey = ".nextid";
+                    break;
+                case "dead":
+                    tmpKey = ".dead";
+                    break;
+                default: 
+                    break;
+            }
 
-        return tmpQuery;
+            if (typeof tmpVal === "boolean") {
+                tmpVal = tmpVal ? "yes" : "no";
+            } else if (tmpVal === null) {
+                tmpVal = "";
+            } else if (typeof tmpVal === "object") {
+                tmpVal = this.stringfySearchQuery(tmpVal);
+            } else if (tmpKey === "placeAfter") {
+                this.placeAfter = tmpVal;
+                tmpKey = "placeBefore";
+            }                
+
+            tmpKey = (addQuestionMark ? "?" : "=") + tmpKey;
+
+            tmpKey = utils.camelCaseOrSnakeCaseToDashedCase(tmpKey);
+
+            tmpQuery.push(tmpKey + "=" + tmpVal);
+        }
+        return tmpQuery; 
     }
 
     /**
